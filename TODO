@@ -1,0 +1,13 @@
+MUI:
+    MIDI input, output selectors (DONE)
+    Note visualizer for input notes (new widget) -- Jackson
+    Output box for key -- DZ
+    Options for how to play along -- DZ
+    Tempo slider / metronome / on-off button -- DZ
+
+HB:
+    Note analysis to determine key
+        Accumulator to track notes (max four) -Rafi
+        Some kind of profiling to determine what key we're in based on those 
+        Play that chord (arpeggiate, etc)
+    Chord progression predictor (optional)
