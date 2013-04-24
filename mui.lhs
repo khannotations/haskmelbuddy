@@ -1,8 +1,8 @@
 The MUI for HaskmelBudddy
 
 > {-# LANGUAGE Arrows #-}
-> module HaskmelBuddy.MUI where
-> import HaskmelBuddy
+>-- module HaskmelBuddy.MUI where
+>-- import HaskmelBuddy
 > import Euterpea
 > import Euterpea.Examples.MUI
 > import Control.Arrow
@@ -23,6 +23,28 @@ The MUI for HaskmelBudddy
 
 > combiner m n = if (isJust m) && (isJust n) then Just (fromJust m, fromJust n)
 >                else Nothing
+
+> keyTextBox' = proc _ -> do
+>   rec str1 <- textbox " " -< "cmajor" 
+> keyTextBox = runUI "Current Chord" keyTextBox'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 > ui3' = proc _ -> do
 >   rec str1 <- textbox "Pitch 1:" -< str1
