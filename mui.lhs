@@ -2,17 +2,28 @@ The MUI for HaskmelBudddy
 
 > {-# LANGUAGE Arrows #-}
 > module HaskmelBuddy.MUI where
+
+> import Prelude hiding (init)
 > import HaskmelBuddy
 > import Euterpea
 > import Euterpea.Examples.MUI
 > import Control.Arrow
 > import Codec.Midi
+> import Control.CCA.Types
 > import Data.Maybe
+
 
 > hbui = proc _ -> do
 >   odevid <- selectOutput -< ()
 >   idevid <- selectInput  -< ()
->   midiOut -< (odevid, [ANote 0 50 100 1])
+>   ap 	<- title "Note" (hiSlider 1 (0, 12) 0) -< ()		-- For testing, choose an ap
+>   uap <- unique -< getChromNote2 chromNotes ap 5			-- Every time it's uniques
+>   let cnotes = []
+>   cnotes <- hold [] -< hbcollect uap cnotes
+>   let lastNote = if isNothing(uap) then Nothing
+>                  else Just (last cnotes) 
+>   -- Should be the first note 4 times, then the note that was played 4 ago each time
+>   midiOut -< (odevid, fmap (\k -> [ANote 0 k 100 1]) lastNote) 	-- Play it 
 
 > hbmui = runUI "HaskmelBuddy" hbui
 
