@@ -9,3 +9,6 @@ By Danielle, Jackson, Rafi
 > hbcollect a as = 	if isNothing(a) then Nothing
 >										else if length as < 4 then Just (fromJust(a):as)
 >													else Just (fromJust(a) : (init as))
+
+> hbprofile :: [AbsPitch] -> ([AbsPitch], String)
+> hbprofile aps = (aps, "C Major")

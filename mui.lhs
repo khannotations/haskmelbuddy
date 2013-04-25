@@ -20,10 +20,14 @@ The MUI for HaskmelBudddy
 >   uap <- unique -< getChromNote2 chromNotes ap 5			-- Every time it's uniques
 >   let cnotes = []
 >   cnotes <- hold [] -< hbcollect uap cnotes
->   let lastNote = if isNothing(uap) then Nothing
->                  else Just (last cnotes) 
+>   let chord = fmap (\_ -> fst $ hbprofile cnotes) uap
+>   let lastNote = fmap (\_ -> last cnotes) uap         -- If uap, then last cnotes, else Nothing
 >   -- Should be the first note 4 times, then the note that was played 4 ago each time
->   midiOut -< (odevid, fmap (\k -> [ANote 0 k 100 1]) lastNote) 	-- Play it 
+>   -- midiOut -< (odevid, fmap chordToMidiChord chord) 	-- Play chord
+>   midiOut -< (odevid, fmap (\k -> [ANote 0 k 100 5]) lastNote) -- Play lastNote
+
+> chordToMidiChord :: [AbsPitch] -> [MidiMessage]
+> chordToMidiChord = map (\k -> ANote 0 k 100 5)
 
 > hbmui = runUI "HaskmelBuddy" hbui
 
@@ -35,9 +39,10 @@ The MUI for HaskmelBudddy
 > combiner m n = if (isJust m) && (isJust n) then Just (fromJust m, fromJust n)
 >                else Nothing
 
-> keyTextBox' = proc _ -> do
->   rec str1 <- textbox " " -< "cmajor" 
-> keyTextBox = runUI "Current Chord" keyTextBox'
+--> keyTextBox' = proc _ -> do
+-->   rec str1 <- textbox " " -< "cmajor" 
+
+--> keyTextBox = runUI "Current Chord" keyTextBox'
 
 
 
