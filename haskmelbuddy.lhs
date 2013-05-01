@@ -25,6 +25,7 @@ Constants
 > -- Mapping absPitch offsets to chordDegrees (-1 => accidental)
 > majorScaleDegrees = [0, -1, 1, -1, 2, 3, -1, 4, -1, 5, -1, 6]
 > minorScaleDegrees = [0, -1, 1, 2, -1, 3, 4, -1, 5, -1, 6, -1]
+> maxcollect = 5
 
 Functions
 ==============================
@@ -32,7 +33,8 @@ Functions
 > -- Compiles notes from Maybe notes. Send -1 to send empty array
 > hbcollect :: [Int] -> Maybe Int -> Maybe [Int]
 > hbcollect ins input = if input == (Just (-1)) then Just []
->                       else fmap ((flip (:)) ins) input
+>                       else if length ins < maxcollect then fmap ((flip (:)) ins) input
+>                       else fmap ((flip (:) (init ins))) input
 
 > -- Takes an array of AbsPitches and a KeySignature and guesses what chord
 > -- in that KS it might be. Returns that chord as AbsPitches (in Octave 3)
@@ -87,7 +89,8 @@ Functions
 > -- Changes the value of an array at an index to the given value
 > changeIndex :: Int -> a -> [a] -> [a]
 > changeIndex _ _ [] = error "changeIndex: empty list"
-> changeIndex index value as = (take index as) ++ (value : drop (index+1) as)
+> changeIndex index value as = if index >= length as then error "changIndex: index too large"
+>                              else (take index as) ++ (value : drop (index+1) as)
 
 > -- Gets the index of the first maximum value
 > maxValueIndex :: Ord a => [a] -> Int
@@ -101,7 +104,8 @@ Tests
 > hbcoll2 = hbcollect (fromJust $ (hbcollect [3, 2] Nothing)) (Just 5) -- Error
 > hbcoll3 = hbcollect (fromJust $ (hbcollect [3, 2] (Just 5))) Nothing -- Nothing
 > hbcoll4 = hbcollect [3, 2] (Just (-1)) -- []
-
+> hbcoll5 = hbcollect [6, 5, 4, 3, 2, 1, 0] (Just (7)) -- []
+> hbcoll6 = hbcollect [7, 6, 5, 4, 3, 2, 1, 0] (Just (8)) -- []
 
 > hbtinc1 = incAtIndex 4 5 [0, 1, 2, 3, 4] -- [0, 1, 2, 3, 9]
 > hbtinc2 = incAtIndex 4 5 [9] -- error
@@ -131,7 +135,7 @@ A Real Example: "Let It Be" by the Beatles
 > hbbeat4 = map pitch (hbprofile [14, 12, 12] hbbeatks) -- Ideally, 4 actually: 1
 
 > -- What if it were in C Minor?
-> hbbeatmks = (A, Major)
+> hbbeatmks = (C, Minor)
 > hbbeatm1 = map pitch (hbprofile [9, 9, 10, 4] hbbeatks) -- Ideally, 1 actually: 6
 > hbbeatm2 = map pitch (hbprofile [9, 9, 12, 14] hbbeatks) -- Ideally, 5 actually: 6
 > hbbeatm3 = map pitch (hbprofile [16, 16, 16, 14] hbbeatks) -- Ideally, 6 actually: 1
