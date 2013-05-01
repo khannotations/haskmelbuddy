@@ -10,5 +10,6 @@ By Danielle, Jackson, Rafi
 >										else if length as < 4 then Just (fromJust(a):as)
 >													else Just (fromJust(a) : (init as))
 
+> hbchords = []
 > hbprofile :: [AbsPitch] -> ([AbsPitch], String)
 > hbprofile aps = (aps, "C Major")
