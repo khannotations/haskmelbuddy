@@ -30,9 +30,8 @@ Functions
 ==============================
 
 > -- Compiles notes from Maybe notes
-> hbcollect :: Maybe a -> [a] -> Maybe [a]
-> hbcollect a as = if isNothing(a) then Nothing
->                  else Just (fromJust(a) : as)
+> hbcollect :: [a] -> Maybe a -> Maybe [a]
+> hbcollect as = fmap ((flip (:)) as)
 
 > -- Takes an array of AbsPitches and a KeySignature and guesses what chord
 > -- in that KS it might be. Returns that chord as AbsPitches (in Octave 3)
@@ -52,7 +51,7 @@ Functions
 >       chord = map ((+ keyRoot) . (majorScalePitches !!)) chordArray
 >       -- Convert back from minor
 >       mChord = if mode == Minor then map (subtract 7) chord else chord
->   in  map (+ 36) mChord -- Put it the third octave
+>   in  map (+ 0) mChord -- Put it the third octave
 
 
 > -- Returns the chord degree (First, Fourth, etc -- as an integer) of the 
@@ -61,12 +60,11 @@ Functions
 > -- That way, hbprofile only has to map 0 -> major, 1->minor, etc, instead
 > -- of accounting for the differences in chord degrees from major to minor
 > getChordFreqs :: [AbsPitch] -> [Int] -> KSig -> [Int]
-> -- If the array is empty, counts has been updated or there were no notes.
-> -- If no notes, then this will return the tonal. Otherwise, it will get 
-> -- the maximum index we've calculated over other iterations (the chord)
+> -- If the array is empty, we're done cycling
 > getChordFreqs [] counts (pc, mode) = counts
 > -- Otherwise, update the appropriate value in the counts array, making
-> -- sure to check that the note is in the scale (an accidental). If not, just skip it
+> -- sure to check that the note is in the scale (not an accidental). 
+> -- If it is, just skip it
 > getChordFreqs (note:notes) counts (pc, mode) =
 >   let scaleDeg = (note - absPitch (pc, 0)) `mod` 12 -- Note as a chromatic scale degree is this PitchClass
 >       rootOfChord = case mode of 
@@ -88,9 +86,7 @@ Functions
 > -- Changes the value of an array at an index to the given value
 > changeIndex :: Int -> a -> [a] -> [a]
 > changeIndex _ _ [] = error "changeIndex: empty list"
-> changeIndex index value as = if index >= length as
->                              then error "changeIndex: index Too Large"
->                              else (take index as) ++ (value : drop (index+1) as)
+> changeIndex index value as = (take index as) ++ (value : drop (index+1) as)
 
 > -- Gets the index of the first maximum value
 > maxValueIndex :: Ord a => [a] -> Int
@@ -98,6 +94,12 @@ Functions
 
 Tests
 ==============================
+
+> -- hbcollect
+> hbcoll1 = hbcollect [3, 2] (Just 4) -- Just [4, 3, 2]
+> hbcoll2 = hbcollect (fromJust $ (hbcollect [3, 2] Nothing)) (Just 5) -- Error
+> hbcoll3 = hbcollect (fromJust $ (hbcollect [3, 2] (Just 5))) Nothing -- Nothing
+
 
 > hbtinc1 = incAtIndex 4 5 [0, 1, 2, 3, 4] -- [0, 1, 2, 3, 9]
 > hbtinc2 = incAtIndex 4 5 [9] -- error
@@ -113,6 +115,8 @@ Tests
 
 > hbprof1 = hbprofile [2, 3, 4, 5, 5] (C, Major) -- [41, 45, 36] (the 4th)
 > hbprof2 = hbprofile [2, 3, 4, 5, 5] (F, Major) -- [41, 45, 48] (same chord, now the root)
+> hbprof3 = hbprofile [2, 3, 4, 5, 5] (D, Major) -- [38, 42, 45] (the root)
+> hbprof4 = hbprofile [2, 3, 4, 5, 5] (Ef, Major) -- [10, 14, 5] (the fifth)
 
 A Real Example: "Let It Be" by the Beatles
 ==============================
@@ -123,3 +127,11 @@ A Real Example: "Let It Be" by the Beatles
 > hbbeat2 = map pitch (hbprofile [9, 9, 12, 14] hbbeatks) -- Ideally, 5 actually: 6
 > hbbeat3 = map pitch (hbprofile [16, 16, 16, 14] hbbeatks) -- Ideally, 6 actually: 1
 > hbbeat4 = map pitch (hbprofile [14, 12, 12] hbbeatks) -- Ideally, 4 actually: 1
+
+> -- What if it were in C Minor?
+> hbbeatmks = (A, Major)
+> hbbeatm1 = map pitch (hbprofile [9, 9, 10, 4] hbbeatks) -- Ideally, 1 actually: 6
+> hbbeatm2 = map pitch (hbprofile [9, 9, 12, 14] hbbeatks) -- Ideally, 5 actually: 6
+> hbbeatm3 = map pitch (hbprofile [16, 16, 16, 14] hbbeatks) -- Ideally, 6 actually: 1
+> hbbeatm4 = map pitch (hbprofile [14, 12, 12] hbbeatks) -- Ideally, 4 actually: 1
+
