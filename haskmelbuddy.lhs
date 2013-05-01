@@ -30,7 +30,7 @@ Constants
 Functions
 ==============================
 
-> -- Compiles notes from Maybe notes. Send -1 to send empty array
+> -- Compiles notes from Maybe notes. Input -1 to input empty array
 > hbcollect :: [Int] -> Maybe Int -> Maybe [Int]
 > hbcollect ins input = if input == (Just (-1)) then Just []
 >                       else if length ins < maxcollect then fmap ((flip (:)) ins) input

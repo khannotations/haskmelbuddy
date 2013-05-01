@@ -9,118 +9,114 @@ The MUI for HaskmelBudddy
 > import Codec.Midi
 > import Data.Maybe
 > import Data.Time
+> import System.IO
 > import Control.Concurrent
 
-> -- measureTime adds a measure's worth of time to a given time
-> -- Used for comparing to old time to see if it's a new measure
-> -- t = tempo; bm = beats per measure; UTCTime is the time
-> checkNewMeasure :: Int -> Int -> UTCTime -> UTCTime -> Maybe UTCTime
-> checkNewMeasure t bm oldTime compTime = 
->   let newMeasureTime = addUTCTime (((fromIntegral bm) / (fromIntegral t)) * 60) oldTime
->   in  if newMeasureTime > compTime then newMeasureTime
->       else Nothing 
+ isNewMeasure :: Int -> Int -> UTCTime -> IO UTCTime
+ isNewMeasure t bm oldtime = 
+   do now <- getCurrentTime
+      if now < (addUTCTime (((fromIntegral bm) / (fromIntegral t)) * 60) oldtime) 
+      then return now
+      else return oldtime 
+ -- t = tempo; bm = beats in a measure; notes = notes played so far in measure
+ -- ks
+ -- ot = old time (time the list began being constructed)
+ hbTimedProfile :: Int -> Int -> UTCTime -> [AbsPitch] -> KSig -> Maybe [AbsPitch]
+ hbTimedProfile t bm ot notes ks = 
+       if (isNewMeasure t bm ot) > ot then 
 
-> -- t = tempo; bm = beats in a measure; notes = notes played so far in measure
-> -- ks
-> -- ot = old time (time the list began being constructed)
-> hbTimedProfile :: Int -> Int -> [AbsPitch] -> KSig -> UTCTime -> Maybe [AbsPitch]
-> hbTimedProfile t bm notes ks ot = 
->       do nt <- getCurrentTime
->          if isNothing(checkNewMeasure t bm ot nt) then Nothing
->          else Just $ hbprofile notes ks
+ hbTimedClear :: Int -> Int -> UTCTime -> IO [AbsPitch]
+ hbTimedClear t m ot = 
+       do nt <- getCurrentTime
+          if (nt < (laterTime t m ot)) then return []
+          else return $ fromJust (hbcollect [] (Just (-1)))
 
+> --fromIO :: IO a -> a
+> --fromIO (IO a) = a
 
---Arrays for radio buttons!
-
-> keyValues :: [(String, Int) ]
-> keyValues = [("C", 0), ("C#", 1),
->                     ("D", 2), ("D#/Eb", 3),
->                     ("E", 4), ("F", 5),
->                     ("F#/Gb", 6), ("G", 7),
->                     ("G#/Ab", 8), ("A", 9),
->                     ("A#/Bb", 10), ("B", 11)]
-
-> majMinArray = [("Major", 0), ("Minor", 1)]
-
-> phraseLengthArray = [("Two", 2), ("Four", 4),
+> -- Arrays for radio buttons!
+> keys :: [PitchClass]
+> keys = [C, Cs, D, Ef, E, F, Fs, G, Af, A, Bf]
+> modes :: [Mode]
+> modes = [Major, Minor]
+> phrLens :: [(String, Int)]
+> phrLens = [("Two", 2), ("Four", 4),
 >                     ("Eight", 8), ("Sixteen", 16)]
-
-> bpMeasureArray = [("Two", 2), ("Four", 4),
+> bpMeasures :: [(String, Int)]
+> bpMeasures = [("Two", 2), ("Three", 3), ("Four", 4),
 >                     ("Six", 6), ("Eight", 8)]
 
 > r = [1, 2, 3]
 
-> getNoteFromMidiMessage :: Maybe [MidiMessage] -> Int -> Int -> UTCTime -> Maybe AbsPitch
-> getNoteFromMidiMessage ms t bm ot = 
->           do nt <- getCurrentTime
->              if isNothing (checkNewMeasure t bm ot nt) 
->              then if isNothing ms then Nothing
->                  else midiExtract $ head $ fromJust ms
->              else Just (-1)
+> midiExtract :: Maybe MidiMessage -> Maybe AbsPitch
+> midiExtract Nothing = Nothing
+> midiExtract (Just m) = 
+>   case m of
+>         Std (NoteOn c k v) -> Just k
+>         Std (NoteOff c k v) -> Nothing
 
-> midiExtract :: MidiMessage -> Maybe AbsPitch
-> midiExtract m = case m of
->                   Std (NoteOn c k v) -> Just k
->                   Std (NoteOff c k v) -> Nothing
 
 -- better layout, radio button for key sig/major/min, slider for tempo, radio button for phrase length, beats per measure radio button
 
 > hbui = leftRight $ proc _ -> do
 >   (idevid, odevid) <- getDeviceIDs -< ()
 >   input <- midiIn -< idevid
-
-> --   i      <- leftRight $ title "Chord" $
-> --            radio (fst (unzip chordIntervals)) 0 -< ()
-
 > -- key radio button: 0 = C, 1 = C#/Bb, ..., 11 = B
->   keyValue    <- leftRight $ title "Key" $
->                   radio (fst (unzip keyValues)) 0 -< ()
+>   keyIndex <- leftRight $ title "Key" $
+>                   radio (map show keys) 0 -< ()
 > -- major or minor radio button: 0 = Major, 1 = Minor
->
->   majMin      <- leftRight $ title "Major/Minor" $
->                   radio (fst (unzip majMinArray)) 0 -< ()
+>   modeIndex <- leftRight $ title "Major/Minor" $
+>                   radio (map show modes) 0 -< ()
 > -- phrase length radio button: Returns an Integer: 2, 4, 8, or 16
->   phraseLength <- leftRight $ title "Phrase Length" $
->                   radio (fst (unzip phraseLengthArray)) 0 -< ()
+>   phrLenIndex <- leftRight $ title "Phrase Length (in measures)" $
+>                   radio (fst (unzip phrLens)) 1 -< ()
 > -- beats per measure radio button: Returns an integer: 2, 4, 6, or 8
->   bpMeasure <- topDown $ title "Beats per Measure" $
->                   radio (fst (unzip bpMeasureArray)) 0 -< ()
+>   bpMeasureIndex <- topDown $ title "Beats per Measure" $
+>                   radio (fst (unzip bpMeasures)) 2 -< ()
 > -- tempo slider (in bpm), tempo = tempo in bpm
->   tempo' <- title "Tempo" (hiSlider 10 (60, 240) 120) -< ()
+>   tempo' <- title "Tempo" (hiSlider 10 (60, 240) 80) -< ()
 >   title "Tempo" display -< tempo'
-
->   -- ap    <- title "Note" (hiSlider 1 (0, 12) 0) -< ()        -- For testing, choose an ap
->   -- evs <- input
->   let ap = getNoteFromMidiMessage input
->   -- uap   <- unique -< ap --getChromNote2 chromNotes ap 5            -- Every time it's uniques
->   -- let cnotes = []
->   rec cnotes <- hold [] -< hbcollect cnotes ap
->   let lastNote = if isNothing(ap) then Nothing
->                  else if (cnotes == []) then Nothing
->                       else Just (last cnotes) 
->     -- Should be the first note 4 times, then the note that was played 4 ago each time
-
->   title "CNOTES" display -< show cnotes
->   title "Length" display -< show $ length cnotes
-
-> --make metronome notes
+>   -- setup timer. Ticks for every beat, and measure (and phrase)
 >   t <- time -< ()
->   tick <- timer -< (t, 60/(fromIntegral tempo'))
+>   let bpMeasure = snd $ bpMeasures !! bpMeasureIndex
+>   let phrLen = snd $ phrLens !! phrLenIndex
+>   let key = keys !! keyIndex
+>   let mode = modes !! modeIndex
+>   let secondsPerBeat = 60/(fromIntegral tempo')
+>   let secondsPerMeasure = secondsPerBeat * fromIntegral(bpMeasure)
+>   let secondsPerPhrase = secondsPerMeasure * fromIntegral(phrLen)
+>   tick <- timer -< (t, secondsPerBeat)
+>   measureTick <- timer -< (t, secondsPerMeasure)
+>   phraseTick <- timer -< (t, secondsPerPhrase)
+>   rec beatCount <- hold 0 -< fmap(const $ (beatCount + 1) `mod` bpMeasure) tick
+>   rec measureCount <- hold 0 -< fmap(const $ (measureCount + 1) `mod` phrLen) measureTick
+>   -- ap    <- title "Note" (hiSlider 1 (0, 12) 0) -< ()        -- For testing, choose an ap
+>   -- uap   <- unique -< ap --getChromNote2 chromNotes ap 5     -- Every time it's unique
+>   let ap = if isNothing measureTick then midiExtract $ fmap head input  -- Get first ap from input
+>            else Just (-1) -- clear hbcollect
+>   -- Update cnotes
+>   rec cnotes <- hold [] -< hbcollect cnotes ap
+>   -- Every measureTick, profile the notes in cnotes
+>   rec mchord <- hold [] -< fmap (const $ hbprofile cnotes (key, mode)) measureTick
+>   -- Array for keeping phrase of chords
+>   rec phraseChords <- hold [] -< changeIndex measureCount
+>   title "CNOTES" display -< show cnotes
+>   title "Beat" display -< show $ beatCount + 1
+>   title "Measure in phrase" display -< show $ measureCount + 1
+>   title "Last measure chord" display -< show mchord
 
---merge streams
+>
+>   let metroVelocity = if isNothing measureTick then 20 else 100
+>   -- let fOutput = mergeE (++) input (fmap (\k -> [ANote 1 k 100 1]) lastNote)
+>   -- let sOutput = mergeE (++) input (fmap (const [ANote 9 37 metroVelocity 0.1]) tick)
+>   -- let sout = fmap (const [ANote 9 37 metroVelocity 0.1]) tick
+> -- output merged streams
 
->   let firstOutput = mergeE (++) input (fmap (\k -> [ANote 0 k 100 1]) lastNote)
->   let finalOutput = mergeE (++) firstOutput (fmap (const [ANote 9 37 1 0.1]) tick)
+>   midiOut -< (odevid, input)
 
---output merged streams
-
->   midiOut -< (odevid, finalOutput)
-
---to run:
+To run:
 
 > hbmui = runUI "HaskmelBuddy" hbui
-
-
 
 
 > reader :: [(Pitch, String)] -> AbsPitch
