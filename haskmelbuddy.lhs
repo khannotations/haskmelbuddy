@@ -29,9 +29,10 @@ Constants
 Functions
 ==============================
 
-> -- Compiles notes from Maybe notes
-> hbcollect :: [a] -> Maybe a -> Maybe [a]
-> hbcollect as = fmap ((flip (:)) as)
+> -- Compiles notes from Maybe notes. Send -1 to send empty array
+> hbcollect :: [Int] -> Maybe Int -> Maybe [Int]
+> hbcollect ins input = if input == (Just (-1)) then Just []
+>                       else fmap ((flip (:)) ins) input
 
 > -- Takes an array of AbsPitches and a KeySignature and guesses what chord
 > -- in that KS it might be. Returns that chord as AbsPitches (in Octave 3)
@@ -99,6 +100,7 @@ Tests
 > hbcoll1 = hbcollect [3, 2] (Just 4) -- Just [4, 3, 2]
 > hbcoll2 = hbcollect (fromJust $ (hbcollect [3, 2] Nothing)) (Just 5) -- Error
 > hbcoll3 = hbcollect (fromJust $ (hbcollect [3, 2] (Just 5))) Nothing -- Nothing
+> hbcoll4 = hbcollect [3, 2] (Just (-1)) -- []
 
 
 > hbtinc1 = incAtIndex 4 5 [0, 1, 2, 3, 4] -- [0, 1, 2, 3, 9]
