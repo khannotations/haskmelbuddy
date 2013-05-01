@@ -39,10 +39,6 @@ The MUI for HaskmelBudddy
 > combiner m n = if (isJust m) && (isJust n) then Just (fromJust m, fromJust n)
 >                else Nothing
 
---> keyTextBox' = proc _ -> do
--->   rec str1 <- textbox " " -< "cmajor" 
-
---> keyTextBox = runUI "Current Chord" keyTextBox'
 
 
 
