@@ -122,7 +122,7 @@ Tests
 > hbprof1 = hbprofile [2, 3, 4, 5, 5] (C, Major) -- [41, 45, 36] (the 4th)
 > hbprof2 = hbprofile [2, 3, 4, 5, 5] (F, Major) -- [41, 45, 48] (same chord, now the root)
 > hbprof3 = hbprofile [2, 3, 4, 5, 5] (D, Major) -- [38, 42, 45] (the root)
-> hbprof4 = hbprofile [2, 3, 4, 5, 5] (Ef, Major) -- [10, 14, 5] (the fifth)
+> hbprof4 = hbprofile [2, 3, 4, 5, 5] (Ef, Major) -- [10, 14, 5] (the fifth) --> "Bf Major"
 
 A Real Example: "Let It Be" by the Beatles
 ==============================

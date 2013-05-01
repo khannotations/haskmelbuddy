@@ -69,7 +69,7 @@ The MUI for HaskmelBudddy
 >                   radio (map show modes) 0 -< ()
 > -- phrase length radio button: Returns an Integer: 2, 4, 8, or 16
 >   phrLenIndex <- leftRight $ title "Phrase Length (in measures)" $
->                   radio (fst (unzip phrLens)) 1 -< ()
+>                   radio (fst (unzip phrLens)) 1  -< ()
 > -- beats per measure radio button: Returns an integer: 2, 4, 6, or 8
 >   bpMeasureIndex <- topDown $ title "Beats per Measure" $
 >                   radio (fst (unzip bpMeasures)) 2 -< ()
@@ -99,7 +99,7 @@ The MUI for HaskmelBudddy
 >   -- Every measureTick, profile the notes in cnotes
 >   rec mchord <- hold [] -< fmap (const $ hbprofile cnotes (key, mode)) measureTick
 >   -- Array for keeping phrase of chords
->   rec phraseChords <- hold [] -< changeIndex measureCount
+>   rec phraseChords <- hold [] -< fmap (\mc -> changeIndex measureCount mc phraseChords) mchord
 >   title "CNOTES" display -< show cnotes
 >   title "Beat" display -< show $ beatCount + 1
 >   title "Measure in phrase" display -< show $ measureCount + 1
@@ -116,7 +116,7 @@ The MUI for HaskmelBudddy
 
 To run:
 
-> hbmui = runUI "HaskmelBuddy" hbui
+> hbmui = runUIEx (2000, 1000) "HaskmelBuddy" hbui
 
 
 > reader :: [(Pitch, String)] -> AbsPitch
