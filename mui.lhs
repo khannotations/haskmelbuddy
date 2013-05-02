@@ -20,29 +20,29 @@ Constants
 > keys = [C, Cs, D, Ef, E, F, Fs, G, Af, A, Bf]
 > modes :: [Mode]
 > modes = [Major, Minor]
+> -- Phrase length can be either 2, 4, 8 or 16 measures long
 > phrLens :: [(String, Int)]
 > phrLens = [("Two", 2), ("Four", 4),
 >                     ("Eight", 8), ("Sixteen", 16)]
+> -- Allow for 2, 3, 4, 6 or 8 beats per measure
 > bpMeasures :: [(String, Int)]
 > bpMeasures = [("Two", 2), ("Three", 3), ("Four", 4),
 >                     ("Six", 6), ("Eight", 8)]
-
-
 
 > -- The UI
 > hbui = leftRight $ proc _ -> do
 >   (idevid, odevid) <- getDeviceIDs -< ()
 >   input <- midiIn -< idevid
->   -- key radio button: 0 = C, 1 = C#/Bb, ..., 11 = B
+>   -- key radio button from keys
 >   keyIndex <- leftRight $ title "Key" $
 >                   radio (map show keys) 0 -< ()
->   -- major or minor radio button: 0 = Major, 1 = Minor
+>   -- mode radio button from modes
 >   modeIndex <- leftRight $ title "Major/Minor" $
 >                   radio (map show modes) 0 -< ()
->   -- phrase length radio button: Returns an Integer: 2, 4, 8, or 16
+>   -- phrase length radio button
 >   phrLenIndex <- leftRight $ title "Phrase Length (in measures)" $
 >                   radio (fst (unzip phrLens)) 1  -< ()
->   -- beats per measure radio button: Returns an integer: 2, 4, 6, or 8
+>   -- beats per measure radio button
 >   bpMeasureIndex <- topDown $ title "Beats per Measure" $
 >                   radio (fst (unzip bpMeasures)) 2 -< ()
 >   -- tempo slider (in bpm), tempo = tempo in bpm
