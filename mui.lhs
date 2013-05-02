@@ -27,16 +27,7 @@ Constants
 > bpMeasures = [("Two", 2), ("Three", 3), ("Four", 4),
 >                     ("Six", 6), ("Eight", 8)]
 
-Functions
-==============================
 
-> -- Gets the ap from the midimessage
-> midiExtract :: Maybe MidiMessage -> Maybe AbsPitch
-> midiExtract Nothing = Nothing
-> midiExtract (Just m) = 
->   case m of
->         Std (NoteOn c k v) -> Just k
->         Std (NoteOff c k v) -> Nothing
 
 > -- The UI
 > hbui = leftRight $ proc _ -> do
@@ -80,11 +71,15 @@ Functions
 >   -- Every measureTick, profile the notes in cnotes
 >   rec mchord <- hold [] -< fmap (const $ hbprofile cnotes (key, mode)) measureTick
 >   -- Array for keeping phrase of chords
->   rec phraseChords <- hold [] -< fmap (\mc -> changeIndex measureCount mc phraseChords) mchord
+>   
+>   rec phraseChords <- hold [] -< fmap (const $ 
+>                                       updateOrAppend measureCount mchord 
+>                                       (take phrLen phraseChords)) measureTick
 >   title "CNOTES" display -< show cnotes
 >   title "Beat" display -< show $ beatCount + 1
 >   title "Measure in phrase" display -< show $ measureCount + 1
 >   title "Last measure chord" display -< show mchord
+>   title "Phrase chords" display -< show phraseChords
 
 >
 >   let metroVelocity = if isNothing measureTick then 20 else 100
@@ -95,18 +90,25 @@ Functions
 
 >   midiOut -< (odevid, input)
 
-To run:
-
 > hbmui = runUIEx (2000, 1000) "HaskmelBuddy" hbui
 
+Functions
+==============================
 
-> reader :: [(Pitch, String)] -> AbsPitch
-> reader [] = (-1)
-> reader (x:xs) = let f (a, b) = absPitch a
->               in f $ x
+> -- Gets the ap from the midimessage
+> midiExtract :: Maybe MidiMessage -> Maybe AbsPitch
+> midiExtract Nothing = Nothing
+> midiExtract (Just m) = 
+>   case m of
+>         Std (NoteOn c k v) -> Just k
+>         Std (NoteOff c k v) -> Nothing
 
-> combiner m n = if (isJust m) && (isJust n) then Just (fromJust m, fromJust n)
->                else Nothing
+> -- updates index if it exists in arr, otherwise appends. If the 
+> updateOrAppend :: Int -> a -> [a] -> [a]
+> updateOrAppend index val arr = 
+>       if index >= length arr then arr ++ [val]
+>       else changeIndex index val arr
+
 
 > keyTextBox' = proc _ -> do
 >--   rec str1 <- textbox " " -< "cmajor" 
