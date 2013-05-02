@@ -27,27 +27,28 @@ Constants
 > bpMeasures = [("Two", 2), ("Three", 3), ("Four", 4),
 >                     ("Six", 6), ("Eight", 8)]
 
-
+> skinny = setLayout $ makeLayout (Fixed 100) (Stretchy 500)
+> medium = setLayout $ makeLayout (Fixed 200) (Stretchy 500)
 
 > -- The UI
 > hbui = leftRight $ proc _ -> do
->   (idevid, odevid) <- getDeviceIDs -< ()
+>   (idevid, odevid) <- medium $ getDeviceIDs -< ()
 >   input <- midiIn -< idevid
 >   -- key radio button: 0 = C, 1 = C#/Bb, ..., 11 = B
->   keyIndex <- leftRight $ title "Key" $
+>   keyIndex <- skinny $ topDown $ title "Key" $
 >                   radio (map show keys) 0 -< ()
 >   -- major or minor radio button: 0 = Major, 1 = Minor
->   modeIndex <- leftRight $ title "Major/Minor" $
+>   modeIndex <- skinny $ topDown $ title "Mode" $
 >                   radio (map show modes) 0 -< ()
 >   -- phrase length radio button: Returns an Integer: 2, 4, 8, or 16
->   phrLenIndex <- leftRight $ title "Phrase Length (in measures)" $
+>   phrLenIndex <- medium $ topDown $ title "Phrase Length" $
 >                   radio (fst (unzip phrLens)) 1  -< ()
 >   -- beats per measure radio button: Returns an integer: 2, 4, 6, or 8
->   bpMeasureIndex <- topDown $ title "Beats per Measure" $
+>   bpMeasureIndex <- medium $ topDown $ title "Beats per Measure" $
 >                   radio (fst (unzip bpMeasures)) 2 -< ()
 >   -- tempo slider (in bpm), tempo = tempo in bpm
->   tempo' <- title "Tempo" (hiSlider 10 (60, 240) 80) -< ()
->   title "Tempo" display -< tempo'
+>   tempo' <- title "Tempo" (viSlider 10 (60, 240) 100) -< ()
+>   -- title "Tempo" display -< tempo'
 >   -- setup timer. Ticks for every beat, measure and phrase
 >   let bpMeasure = snd $ bpMeasures !! bpMeasureIndex
 >       phrLen = snd $ phrLens !! phrLenIndex
@@ -70,27 +71,27 @@ Constants
 >   rec cnotes <- hold [] -< hbcollect cnotes ap
 >   -- Every measureTick, profile the notes in cnotes
 >   rec mchord <- hold [] -< fmap (const $ hbprofile cnotes (key, mode)) measureTick
->   -- Array for keeping phrase of chords
->   
+>   -- Also update phrasechords. We use measurecount -1 becuase it takes a while for hbprofile to work
 >   rec phraseChords <- hold [] -< fmap (const $ 
->                                       updateOrAppend measureCount mchord 
+>                                        updateOrAppend (mod (measureCount - 1) phrLen) mchord 
 >                                       (take phrLen phraseChords)) measureTick
->   title "CNOTES" display -< show cnotes
->   title "Beat" display -< show $ beatCount + 1
->   title "Measure in phrase" display -< show $ measureCount + 1
->   title "Last measure chord" display -< show mchord
->   title "Phrase chords" display -< show phraseChords
+>   title "Your chord progression --------------------------------" 
+>           display -< show $ map chordToKeyString phraseChords
+>   skinny $ title "Beat" display -< show $ beatCount + 1
+>   skinny $ title "Measure" display -< show $ measureCount + 1
+>   -- title "Last measure chord" display -< show mchord
+>   title "Notes played this measure"
+>           display -< show $ map (fst . pitch) cnotes
 
->
->   let metroVelocity = if isNothing measureTick then 20 else 100
->   -- let fOutput = mergeE (++) input (fmap (\k -> [ANote 1 k 100 1]) lastNote)
->   -- let sOutput = mergeE (++) input (fmap (const [ANote 9 37 metroVelocity 0.1]) tick)
->   -- let sout = fmap (const [ANote 9 37 metroVelocity 0.1]) tick
-> -- output merged streams
+>   let keyC = if phraseChords == [] then [] else head phraseChords
+>       keyChord = if length keyC == 3 then Just keyC else Nothing
+>       chordOut = fmap (map (\k -> ANote 0 k 120 secondsPerMeasure)) keyChord
+>       metroVelocity = if isNothing measureTick then 20 else 100
+>       tickOut = fmap (const [ANote 9 37 metroVelocity 0.1]) tick
+>   skinny $ title "Background chord" display -< show $ fmap chordToKeyString keyChord
+>   midiOut -< (odevid, chordOut)
 
->   midiOut -< (odevid, input)
-
-> hbmui = runUIEx (2000, 1000) "HaskmelBuddy" hbui
+> hbmui = runUIEx (2000, 1000) "HaskmelBuddy" (setLayout (makeLayout (Stretchy 500) (Fixed 1000)) hbui)
 
 Functions
 ==============================
@@ -103,17 +104,13 @@ Functions
 >         Std (NoteOn c k v) -> Just k
 >         Std (NoteOff c k v) -> Nothing
 
-> -- updates index if it exists in arr, otherwise appends. If the 
-> updateOrAppend :: Int -> a -> [a] -> [a]
+> -- updates index if it exists in arr, otherwise appends.
+> updateOrAppend :: Int -> [a] -> [[a]] -> [[a]]
+> updateOrAppend _ [] arr = arr -- Won't overwrite with nothing
 > updateOrAppend index val arr = 
->       if index >= length arr then arr ++ [val]
->       else changeIndex index val arr
+>     if index >= length arr then arr ++ [val]
+>     else changeIndex index val arr
 
-
-> keyTextBox' = proc _ -> do
->--   rec str1 <- textbox " " -< "cmajor" 
->       title "Chord" display -< "cmajor"
-> keyTextBox = runUI "Current Chord" keyTextBox'
 
 > toChord' i ms@(m:_) =
 >   case m of

@@ -39,6 +39,7 @@ Functions
 > -- Takes an array of AbsPitches and a KeySignature and guesses what chord
 > -- in that KS it might be. Returns that chord as AbsPitches (in Octave 3)
 > hbprofile :: [AbsPitch] -> KSig -> [AbsPitch]
+> hbprofile [] _ = [] -- Nothing to profile
 > hbprofile notes (pc, mode) = 
 >   -- First get the chord degree likelihoods of these notes in this key
 >   let chordFreqs = getChordFreqs notes baseFreqs (pc, mode)--chordDegree = getChordFreqs notes baseFreqs (pc, mode)
@@ -54,7 +55,7 @@ Functions
 >       chord = map ((+ keyRoot) . (majorScalePitches !!)) chordArray
 >       -- Convert back from minor
 >       mChord = if mode == Minor then map (subtract 7) chord else chord
->   in  map (+ 0) mChord -- Put it the third octave
+>   in  map (+ 36) mChord -- Put it the third octave
 
 
 > -- Returns the chord degree (First, Fourth, etc -- as an integer) of the 
@@ -96,8 +97,34 @@ Functions
 > maxValueIndex :: Ord a => [a] -> Int
 > maxValueIndex as = fromJust $ elemIndex (maximum as) as
 
+> -- Takes three abspitches and guesses a triad
+> chordToKeyString :: [AbsPitch] -> String
+> chordToKeyString [] = "None"
+> chordToKeyString xs = 
+>   let key = show $ fst $ pitch $ head xs
+>   in case (mod ((xs !! 1) - (xs !! 0)) 12) of
+>           4 -> key ++ " Major"
+>           3 -> case (mod ((xs !! 2) - (xs !! 1)) 12) of
+>               4 -> key ++ " Minor"
+>               3 -> key ++ " Diminished"
+>               _ -> "Not a Triad"
+>           _ -> "Not a Triad"
+
+
 Tests
 ==============================
+
+> -- chord to key
+> cM, csM, efM, fsM, afM, bfM, bfM2, cm, bd :: String
+> cM = chordToKeyString [0, 4, 7]
+> csM = chordToKeyString [1, 5, 8]
+> efM = chordToKeyString [3, 7, 10]
+> fsM = chordToKeyString [6, 10, 13]
+> afM = chordToKeyString [8, 12, 15]
+> bfM = chordToKeyString [10, 14, 17]
+> bfM2 = chordToKeyString [10, 2, 5]
+> cm = chordToKeyString [0, 3, 7]
+> bd = chordToKeyString [47, 50, 53]
 
 > -- hbcollect
 > hbcoll1 = hbcollect [3, 2] (Just 4) -- Just [4, 3, 2]
