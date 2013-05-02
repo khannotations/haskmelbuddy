@@ -20,30 +20,33 @@ Constants
 > keys = [C, Cs, D, Ef, E, F, Fs, G, Af, A, Bf]
 > modes :: [Mode]
 > modes = [Major, Minor]
+> -- Phrase length can be either 2, 4, 8 or 16 measures long
 > phrLens :: [(String, Int)]
 > phrLens = [("Two", 2), ("Four", 4),
 >                     ("Eight", 8), ("Sixteen", 16)]
+> -- Allow for 2, 3, 4, 6 or 8 beats per measure
 > bpMeasures :: [(String, Int)]
 > bpMeasures = [("Two", 2), ("Three", 3), ("Four", 4),
 >                     ("Six", 6), ("Eight", 8)]
 
 > skinny = setLayout $ makeLayout (Fixed 100) (Stretchy 500)
-> medium = setLayout $ makeLayout (Fixed 200) (Stretchy 500)
+> medium = setLayout $ makeLayout (Fixed 150) (Stretchy 500)
+> large = setLayout $ makeLayout (Fixed 300) (Stretchy 500)
 
 > -- The UI
 > hbui = leftRight $ proc _ -> do
->   (idevid, odevid) <- medium $ getDeviceIDs -< ()
+>   (idevid, odevid) <- large $ getDeviceIDs -< ()
 >   input <- midiIn -< idevid
->   -- key radio button: 0 = C, 1 = C#/Bb, ..., 11 = B
->   keyIndex <- skinny $ topDown $ title "Key" $
+>   -- key radio button from keys
+>   keyIndex <- skinny $ leftRight $ title "Key" $
 >                   radio (map show keys) 0 -< ()
->   -- major or minor radio button: 0 = Major, 1 = Minor
->   modeIndex <- skinny $ topDown $ title "Mode" $
+>   -- mode radio button from modes
+>   modeIndex <- skinny $ leftRight $ title "Major/Minor" $
 >                   radio (map show modes) 0 -< ()
->   -- phrase length radio button: Returns an Integer: 2, 4, 8, or 16
->   phrLenIndex <- medium $ topDown $ title "Phrase Length" $
+>   -- phrase length radio button
+>   phrLenIndex <- medium $ leftRight $ title "Measures per Phrase" $
 >                   radio (fst (unzip phrLens)) 1  -< ()
->   -- beats per measure radio button: Returns an integer: 2, 4, 6, or 8
+>   -- beats per measure radio button
 >   bpMeasureIndex <- medium $ topDown $ title "Beats per Measure" $
 >                   radio (fst (unzip bpMeasures)) 2 -< ()
 >   -- tempo slider (in bpm), tempo = tempo in bpm
@@ -75,12 +78,12 @@ Constants
 >   rec phraseChords <- hold [] -< fmap (const $ 
 >                                        updateOrAppend (mod (measureCount - 1) phrLen) mchord 
 >                                       (take phrLen phraseChords)) measureTick
->   title "Your chord progression --------------------------------" 
+>   large $ title "Your chord progression" 
 >           display -< show $ map chordToKeyString phraseChords
 >   skinny $ title "Beat" display -< show $ beatCount + 1
 >   skinny $ title "Measure" display -< show $ measureCount + 1
 >   -- title "Last measure chord" display -< show mchord
->   title "Notes played this measure"
+>   large $ title "Notes played this measure"
 >           display -< show $ map (fst . pitch) cnotes
 
 >   let keyC = if phraseChords == [] then [] else head phraseChords
@@ -88,10 +91,10 @@ Constants
 >       chordOut = fmap (map (\k -> ANote 0 k 120 secondsPerMeasure)) keyChord
 >       metroVelocity = if isNothing measureTick then 20 else 100
 >       tickOut = fmap (const [ANote 9 37 metroVelocity 0.1]) tick
->   skinny $ title "Background chord" display -< show $ fmap chordToKeyString keyChord
+>   medium $ title "Background chord" display -< show $ fmap chordToKeyString keyChord
 >   midiOut -< (odevid, chordOut)
 
-> hbmui = runUIEx (2000, 1000) "HaskmelBuddy" (setLayout (makeLayout (Stretchy 500) (Fixed 1000)) hbui)
+> hbmui = runUIEx (3000, 1000) "HaskmelBuddy" (setLayout (makeLayout (Stretchy 500) (Stretchy 1000)) hbui)
 
 Functions
 ==============================

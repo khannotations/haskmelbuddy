@@ -9,8 +9,6 @@ By Danielle, Jackson, Rafi
 Types
 ==============================
 
-> -- For some reason, Euterpea wasn't picking this up
-> -- data Mode = Major | Minor deriving (Eq, Show)
 > -- My own Key Signature because I felt like it
 > type KSig = (PitchClass, Mode)
 
@@ -57,7 +55,6 @@ Functions
 >       mChord = if mode == Minor then map (subtract 7) chord else chord
 >   in  map (+ 36) mChord -- Put it the third octave
 
-
 > -- Returns the chord degree (First, Fourth, etc -- as an integer) of the 
 > -- chord an array of AbsPitches is most likely to be. 
 > -- For minor chords, it adds 5 to map it onto its relative major.
@@ -85,7 +82,6 @@ Functions
 > -- Increment the value at an index by a specified amount
 > incAtIndex :: Num a => Int -> a -> [a] -> [a]
 > incAtIndex index inc arr = changeIndex index ((arr !! index) + inc) arr
-
 
 > -- Changes the value of an array at an index to the given value
 > changeIndex :: Int -> a -> [a] -> [a]
@@ -161,8 +157,8 @@ A Real Example: "Let It Be" by the Beatles
 > hbbeat3 = map pitch (hbprofile [16, 16, 16, 14] hbbeatks) -- Ideally, 6 actually: 1
 > hbbeat4 = map pitch (hbprofile [14, 12, 12] hbbeatks) -- Ideally, 4 actually: 1
 
-> -- What if it were in C Minor?
-> hbbeatmks = (C, Minor)
+> -- What if it were in A Major?
+> hbbeatmks = (A, Major)
 > hbbeatm1 = map pitch (hbprofile [9, 9, 10, 4] hbbeatks) -- Ideally, 1 actually: 6
 > hbbeatm2 = map pitch (hbprofile [9, 9, 12, 14] hbbeatks) -- Ideally, 5 actually: 6
 > hbbeatm3 = map pitch (hbprofile [16, 16, 16, 14] hbbeatks) -- Ideally, 6 actually: 1
