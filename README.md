@@ -7,9 +7,9 @@
 
 The project began because Jackson wanted something to harmonize with him as he sang into a mic. The goal was to have software that took MIDI input and an interface into which you could specify some settings. With that, HaskmelBuddy would analyze the inputted notes, profile them to see what chord they were most likely to be a part of, and play that chord as you played.
 
-However, this initial idea proved very difficult. First, getting MIDI input from voice is not a trivial task; to solve this we resolved to use only a piano at first—obtaining a MIDI mic would be for later. 
+However, this initial idea proved very difficult. First, getting MIDI input from voice is not a trivial task; to solve this we resolved to use only a piano at first—obtaining a MIDI mic would be for later. The greater challenge was real-time analysis of notes. It's impossible to predict the chord one is currently playing in, because the input is just too sparse and coming in too fast. Instead, we provided an interface where one specifies a Key Signature, Time Signature and "Phrase Length": how many measures are in one musical phrase in the piece one is playing. This way, we can take advantage of the tendency in music that consecutive phrases usually have the same chord progression.
 
-The greater challenge was real-time analysis of notes. It's impossible to predict the chord one is currently playing in, because the input is just too sparse and coming in too fast. Instead, we provided an interface where one specifies a Key Signature, Time Signature and "Phrase Length": how many measures are in one musical phrase in the piece one is playing. This way, we can take advantage of the tendency in music that consecutive phrases usually have the same chord progression.
+Our project has two main parts: the MUI (frontend) and the chord analysis (backend)
 
 ## The MUI
 

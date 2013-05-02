@@ -1,5 +1,4 @@
-Profile analysis for HaskmelBuddy
-By Danielle, Jackson, Rafi
+Functions for note analysis
 
 > module HaskmelBuddy where
 > import Euterpea

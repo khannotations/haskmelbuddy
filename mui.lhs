@@ -93,10 +93,11 @@ Constants
 >       tickOut = fmap (const [ANote 9 37 metroVelocity 0.1]) tick
 >   medium $ title "Background chord" display -< show $ fmap chordToKeyString keyChord
 >   midiOut -< (odevid, chordOut)
+>   -- midiOut -< (odevid, mergeE (++) chordOut tickOut) -- to hear with metronome
 
 > hbmui = runUIEx (3000, 1000) "HaskmelBuddy" (setLayout (makeLayout (Stretchy 500) (Stretchy 1000)) hbui)
 
-Functions
+Helper Functions
 ==============================
 
 > -- Gets the ap from the midimessage
@@ -113,29 +114,3 @@ Functions
 > updateOrAppend index val arr = 
 >     if index >= length arr then arr ++ [val]
 >     else changeIndex index val arr
-
-
-> toChord' i ms@(m:_) =
->   case m of
->       Std (NoteOn c k v) -> f NoteOn c k v
->       Std (NoteOff c k v) -> f NoteOff c k v
->       _ -> ms
->   where f g c k v = map (\k' -> Std (g c k' v))
->                           (scanl (+) k (snd (chordIntervals !! i )))
-
-chordIntervals :: [(String, [Int ]) ]
-chordIntervals = [("Maj", [4, 3, 5]), ("Maj7", [4, 3, 4, 1]),
-                    ("Maj9", [4, 3, 4, 3]), ("Maj6", [4, 3, 2, 3]),
-                    ("min", [3, 4, 5]), ("min7", [3, 4, 3, 2]),
-                    ("min9", [3, 4, 3, 4]), ("min7b5", [3, 3, 4, 2]),
-                    ("mMaj7", [3, 4, 4, 1]), ("dim", [3, 3, 3]),
-                    ("dim7", [3, 3, 3, 3]), ("Dom7", [4, 3, 3, 2]),
-                    ("Dom9", [4, 3, 3, 4]), ("Dom7b9", [4, 3, 3, 3])]
-
-> -- Hudak's code
-> chromNotes = [("C", 48), ("Cs", 49), ("D", 50), ("Ds", 51), ("E", 52), ("F", 53), 
->               ("Fs", 54), ("G", 55), ("Gs", 56), ("A", 57), ("As", 58), ("B", 59)]
-
-> getChromNote2 :: [(a, AbsPitch)] -> Int -> Int -> AbsPitch
-> getChromNote2 xs i o = let f (a, b) = (b - 48) + (o * 12)
->                     in f (xs !! i)
